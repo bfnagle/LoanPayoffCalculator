@@ -1,8 +1,9 @@
 #This module reads the data into a structure and passes it to the main driver
 from bs4 import BeautifulSoup
-import requests
 import os.path
-#from twill.commands import *
+from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
 
 def readTxtFile(fileName):
 	loanData = []
@@ -23,27 +24,70 @@ def readTxtFile(fileName):
 	return loanData
 
 def pullDataFromWebsite(website, username, pin, password):
-	#loanData = []
-	site = website
+	loanData = []
+	website = website.rstrip('/')
+	chrome_options = Options()
+	#chrome_options.add_argument("--headless")
+	chrome_options.binary_location = 'C:\\Users\\bfnag\\AppData\\Local\\Google\\Chrome SxS\\Application\\chrome.exe'
+	driver = webdriver.Chrome(executable_path = os.path.abspath("chromedriver"), chrome_options = chrome_options)
+	driver.get(website)
+	
+	login_page = driver.find_element_by_id("login-link")
+	login_page.click()
 
-	#go(site)
-	#showforms()
-#	fv("1", "")
+	userLogin = driver.find_element_by_id("userid")
+	userLogin.clear()
+	userLogin.send_keys(username)
+	userLogin.send_keys(Keys.RETURN)
 
-	#Pull the website html and pass it to BeautifulSoup
-	# siteReq = requests.get(site)
-	# page = BeautifulSoup(siteReq.content)
+	try:
+		pinPage = driver.find_element_by_id("pinNumber")
+		pinPage.clear()
+		pinPage.send_keys(pin)
+		pinPage.send_keys(Keys.RETURN)
+	except:
+		print("No Pin Needed")
 
-	#Here, we parse the webpage and navigate to the log in page
-	# for link in page.find_all('a'):
-	# 	if "log in" in link:
-	# 		site = link.get('href')
-	# 		print(site)
-	# 		break
+	passLogin = driver.find_element_by_id("password")
+	passLogin.clear()
+	passLogin.send_keys(password)
+	passLogin.send_keys(Keys.RETURN)
 
-	# siteReq = requests.get(site)
-	# page = BeautifulSoup(siteReq.content)
+	accountSummary = driver.find_element_by_link_text('Account Summary')
+	accountSummary.click()
 
-	#Now, parse that webpage and enter username
+	accountDetails = driver.find_element_by_link_text('account and loan details')
+	accountDetails.click()
 
-	#return loanData
+	html = driver.page_source
+	soup = BeautifulSoup(html, 'html.parser')
+
+	printNext = False
+	principal = []
+	for box in soup.find_all("div", class_ = "glui-expand-outer LitA-expand"):
+		for item in box.find_all("div"):
+			if item.text == "Principal Balance":
+				printNext = True
+			elif printNext:
+				loanAmount = item.text.replace("$","")
+				if "," in loanAmount:
+					loanAmount = loanAmount.replace(",","")
+				principal.append(float(loanAmount))
+				printNext = False
+
+	interestRates = []
+	for box in soup.find_all("div", class_ = "glui-click-to-toggle-outer loan"):
+		for item in box.find_all("span", class_ = "LitA-right"):
+			interestRates.append(float(item.text.replace("Interest Rate", "").replace("fixed", "").replace(" ", "").replace("%", "").replace("\n", "")) / 100)
+
+	i = 0
+	for item in principal:
+		tmpTuple = []
+		tmpTuple.append(item)
+		tmpTuple.append(interestRates[i])
+		i += 1
+		loanData.append(tmpTuple)
+
+	driver.close()
+
+	return loanData

@@ -27,10 +27,8 @@ def pressed(button):
 			username = app.getEntry("Username")
 			pin = app.getEntry("Pin")
 			password = app.getEntry("Password")
-			loanWebsite = app.getEntry("Loan Servicer Website")
-			#Parser.pullDataFromWebsite(website = loanWebsite, username = username, pin = pin, password = password)
-			app.setMessage("Feedback", "Web data not yet supported")
-			return
+			loanWebsite = "https://" + app.getEntry("Loan Servicer Website") + "/"
+			loanData = Parser.pullDataFromWebsite(website = loanWebsite, username = username, pin = pin, password = password)
 
 
 		if loanData:
@@ -90,7 +88,7 @@ app.setEntryDefault("Interest rate cutoff for extra payments", "6.5")
 app.addFileEntry("Data File")
 
 app.addLabelEntry("Loan Servicer Website")
-app.setEntryDefault("Loan Servicer Website", "https://www.example.com")
+app.setEntryDefault("Loan Servicer Website", "example.com")
 app.addLabelEntry("Username")
 app.setEntryDefault("Username", "StudentDebtPayer1")
 app.addLabelSecretEntry("Pin")
