@@ -88,12 +88,11 @@ def pullDataFromWebsite(website, username, pin, password):
 		for item in box.find_all("span", class_ = "LitA-right"):
 			interestRates.append(float(item.text.replace("Interest Rate", "").replace("fixed", "").replace(" ", "").replace("%", "").replace("\n", "")) / 100)
 
-	loanData = zip(principal, interestRates)
-	# for num in range(len(principal)):
-	# 	tmpTuple = []
-	# 	tmpTuple.append(principal[num])
-	# 	tmpTuple.append(interestRates[num])
-	# 	loanData.append(tmpTuple)
+	for num in range(len(principal)):
+		tmpTuple = []
+		tmpTuple.append(principal[num])
+		tmpTuple.append(interestRates[num])
+		loanData.append(tmpTuple)
 
 	driver.close()
 
