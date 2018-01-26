@@ -8,19 +8,18 @@ from appJar import gui
 def pressed(button):
 	if button == "Cancel":
 		app.stop()
-	else:
+	elif button == "Pull Data":
 		try:
-			app.clearMessage("Feedback")
+			app.clearMessage(feedbackMsg)
 		except:
-			app.addEmptyMessage("Feedback")
+			app.addEmptyMessage(feedbackMsg)
 		try:
-			app.clearMessage("Results")
+			app.clearMessage(resultsMsg)
 		except:
-			app.addEmptyMessage("Results")
+			app.addEmptyMessage(resultsMsg)
 
-
-		loanData = []
-		if app.getRadioButton("Loan Data") == "File":
+		global loanData
+		if app.getRadioButton(radioButton) == fileRadio:
 			fileName = app.getEntry("Data File")
 			loanData = Parser.readTxtFile(fileName = fileName)
 		else:
@@ -36,21 +35,37 @@ def pressed(button):
 			message += "Successfully collected loan principle and interest information!\n"
 			for loan in loanData:
 				message += ("$" + str(loan[0]) + " at " + "{0:.2f}".format((loan[1] * 100)) + "%\n")
-			app.setMessage("Feedback", message)
+			app.setMessage(feedbackMsg, message)
 		else:
-			app.setMessage("Feedback","Failed to properly pull loan data")
+			app.setMessage(feedbackMsg,"Failed to properly pull loan data")
+			return
+	else:
+		try:
+			app.clearMessage(feedbackMsg)
+		except:
+			app.addEmptyMessage(feedbackMsg)
+		try:
+			app.clearMessage(resultsMsg)
+		except:
+			app.addEmptyMessage(resultsMsg)
+
+		if loanData == []:
+			app.setMessage(feedbackMsg, "Pull loan data before calculating")
 			return
 
-
-		basePayment = float(app.getEntry("Minimum monthly payment"))
-		actualPayment = float(app.getEntry("Actual monthly payment"))
-		interestThreshold = float(app.getEntry("Interest rate cutoff for extra payments")) / 100.0
+		try:
+			basePayment = float(app.getEntry("Minimum monthly payment"))
+			actualPayment = float(app.getEntry("Actual monthly payment"))
+			interestThreshold = float(app.getEntry("Interest rate cutoff for extra payments")) / 100.0
+		except ValueError as err:
+			app.setMessage(feedbackMsg, "Enter payment and interest information before running.")
+			return
 		extra = actualPayment - basePayment
 
 		if actualPayment < basePayment:
 			message += ("\nActual Payment supplied is less than the minimum monthly payment!\n")
 			message += ("Using minimum monthly payment as actual payment.")
-			app.setMessage("Feedback", message)
+			app.setMessage(feedbackMsg, message)
 			actualPayment = basePayment
 
 		paymentPlan = Calculator.PaymentPlan(basePay = basePayment, actualPay = actualPayment)
@@ -70,32 +85,46 @@ def pressed(button):
 		result += ("Time saved: " + str(months) + " months\n")
 		result += ("Interest saved: $" + str(base[1] - savings [1]) + "\n")
 
-		app.setMessage("Results", result)
+		app.setMessage(resultsMsg, result)
 		
+guiName = "Student Loan Payoff Calculator"
+app = gui(guiName, "1000x700")
 
-app = gui("Student Loan Payoff Caluclator", "1000x700")
+radioButton = "Loan Data"
+fileRadio = "File"
+onlineRadio = "Online"
+app.addRadioButton(radioButton, fileRadio)
+app.addRadioButton(radioButton, onlineRadio)
 
-app.addRadioButton("Loan Data", "File")
-app.addRadioButton("Loan Data", "Online")
+minField = "Minimum monthly payment"
+actualField = "Actual monthly payment"
+interestField = "Interest rate cutoff for extra payments"
+app.addLabelEntry(minField)
+app.setEntryDefault(minField, "300")
+app.addLabelEntry(actualField)
+app.setEntryDefault(actualField, "500")
+app.addLabelEntry(interestField)
+app.setEntryDefault(interestField, "6.5")
 
-app.addLabelEntry("Minimum monthly payment")
-app.setEntryDefault("Minimum monthly payment", "300")
-app.addLabelEntry("Actual monthly payment")
-app.setEntryDefault("Actual monthly payment", "500")
-app.addLabelEntry("Interest rate cutoff for extra payments")
-app.setEntryDefault("Interest rate cutoff for extra payments", "6.5")
+fileField = "Data File"
+app.addFileEntry(fileField)
 
-app.addFileEntry("Data File")
+websiteField = "Loan Servicer Website"
+userField = "Username"
+pinField = "Pin"
+passField = "Password"
+app.addLabelEntry(websiteField)
+app.setEntryDefault(websiteField, "example.com")
+app.addLabelEntry(userField)
+app.setEntryDefault(userField, "StudentDebtPayer1")
+app.addLabelSecretEntry(pinField)
+app.setEntryDefault(pinField, "1234")
+app.addLabelSecretEntry(passField)
+app.setEntryDefault(passField, "ChangeMe")
 
-app.addLabelEntry("Loan Servicer Website")
-app.setEntryDefault("Loan Servicer Website", "example.com")
-app.addLabelEntry("Username")
-app.setEntryDefault("Username", "StudentDebtPayer1")
-app.addLabelSecretEntry("Pin")
-app.setEntryDefault("Pin", "1234")
-app.addLabelSecretEntry("Password")
-app.setEntryDefault("Password", "ChangeMe")
-
-app.addButtons(["Calculate", "Cancel"], pressed)
+app.addButtons(["Calculate", "Pull Data", "Cancel"], pressed)
+loanData = []
+feedbackMsg = "Feedback"
+resultsMsg = "Results"
 
 app.go()
