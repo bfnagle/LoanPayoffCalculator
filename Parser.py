@@ -1,14 +1,11 @@
 #This module reads the data into a structure and passes it to the main driver
-from bs4 import BeautifulSoup
 import os.path
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
 
 def readTxtFile(fileName):
 	loanData = []
 	extension = os.path.splitext(fileName)[1]
 	if extension != ".txt":
+		print("\nFile needs to be in \".txt\" format.")
 		return loanData
 	try:
 		file = open(fileName)
@@ -24,6 +21,16 @@ def readTxtFile(fileName):
 	return loanData
 
 def pullDataFromWebsite(website, username, pin, password):
+	# Importing these modules in the function because I cannot install them on my work computer
+	# So, if I want to run the code on my work computer, I cannot use these modules
+	# Rather than comment/uncomment every time, it is easier to just import only when running web requests
+	# If I have to run on my work computer, I can still run from a file
+	# If the modules are imported at the top level, then the whole Parser.py program does not work
+	from bs4 import BeautifulSoup
+	from selenium import webdriver
+	from selenium.webdriver.common.keys import Keys
+	from selenium.webdriver.chrome.options import Options
+	
 	loanData = []
 	website = website.rstrip('/')
 	chrome_options = Options()
@@ -75,18 +82,18 @@ def pullDataFromWebsite(website, username, pin, password):
 				principal.append(float(loanAmount))
 				printNext = False
 
+
 	interestRates = []
 	for box in soup.find_all("div", class_ = "glui-click-to-toggle-outer loan"):
 		for item in box.find_all("span", class_ = "LitA-right"):
 			interestRates.append(float(item.text.replace("Interest Rate", "").replace("fixed", "").replace(" ", "").replace("%", "").replace("\n", "")) / 100)
 
-	i = 0
-	for item in principal:
-		tmpTuple = []
-		tmpTuple.append(item)
-		tmpTuple.append(interestRates[i])
-		i += 1
-		loanData.append(tmpTuple)
+	loanData = zip(principal, interestRates)
+	# for num in range(len(principal)):
+	# 	tmpTuple = []
+	# 	tmpTuple.append(principal[num])
+	# 	tmpTuple.append(interestRates[num])
+	# 	loanData.append(tmpTuple)
 
 	driver.close()
 
