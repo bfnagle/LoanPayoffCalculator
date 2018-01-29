@@ -4,6 +4,7 @@
 import Parser
 import Calculator
 import sys
+import getpass
 
 if len(sys.argv) == 1 or len(sys.argv) > 2:
 	print("Add flag -web to use data from the internet or flag -file to pull data from a file.")
@@ -15,13 +16,54 @@ if sys.argv[1] == "-web":
 	if "https" not in loanWebsite:
 		loanWebsite = "https://" + loanWebsite
 	loanWebsite = loanWebsite.rstrip("/")
+
 	uname = input("Enter loan servicer username: ")
-	pin = input("Enter loan servicer pin: ")
-	passwd = input("Enter loan servicer password: ")
+	pin = getpass.getpass("Enter loan servicer pin: ")
+	passwd = getpass.getpass("Enter loan servicer password: ")
 	loanData = Parser.pullDataFromWebsite(website = loanWebsite, username = uname, password = passwd, pin = pin)
+
+	try:
+		if loanData[0] < 0:
+			if loanData[0] == -1:
+				message = "\nRequested website not yet supported."
+			elif loanData[0] == -2:
+				message = "Problem accessing website."
+			elif loanData[0] == -3:
+				message = "Username not accepted."
+			elif loanData[0] == -4:
+				message = "Pin not accepted."
+			elif loanData[0] == -5:
+				message = "Password not accepted."
+			elif loanData[0] == -6:
+				message = "Issue with pulling data from the website."
+			else:
+				message = "Unknown error occurred."
+		message += "\nPlease try again."
+		print(message)
+		exit()
+	except TypeError:
+		print("\n")
+
 elif sys.argv[1] == "-file":
 	filename = input("Enter name of file where the data is stored, including extension (e.g. data.txt): ")
 	loanData = Parser.readTxtFile(filename)
+	try:
+		if loanData[0] < 0:
+			if loanData[0] == -1:
+				message = "\nFile needs to be in \".txt\" format."
+			elif loanData[0] == -2:
+				message = "File did not open properly."
+			elif loanData[0] == -3:
+				message = "Could not parse file properly. Check data format in file.\n"
+				message = message + "Format should be: loan,interestRate\\n. e.g.:\n1000,4.5\n4000,5.1"
+			else:
+				message = "Unknown error occurred."
+			message += "\nPlease try again."
+			print(message)
+			exit()
+	except TypeError:
+		print("\n")
+
 else:
 	print("Add flag -web to use data from the internet or flag -file to pull data from a file.")
 	exit()
